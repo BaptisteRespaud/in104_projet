@@ -15,10 +15,10 @@ double calc_mean(double arr[], int n){
 }
 
 double calc_variance(double arr[], int n){
-    double x_barre= calc_mean(arr,n);
-    int sum=0;
-    for (int i=0; i<n; i++){
-        sum += (arr[i]-x_barre)**2;
+    double mean = calc_mean(arr, n);
+    int sum = 0;
+    for (int i = 0; i < n; i++){
+        sum += (arr[i] - mean) * (arr[i] - mean);
     }
-    return sum;
+    return sum/n;
 }
