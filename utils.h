@@ -19,7 +19,7 @@ double *calc_autocorr(double arr[], int n,int n_autoc);  // autocorrelation
 
 void write_to_file_iter(double *arr, int n, char *name);
 
-double *read_from_file(char *name, int *n);
+double *read_from_file(char *name, int n);
 
 double *data_blocking(double *arr, int n, int nblk_max);  // data blocking
 
