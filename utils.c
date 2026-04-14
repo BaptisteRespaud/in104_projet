@@ -32,7 +32,7 @@ double calc_variance(double arr[], int n){
 }
 
 void write_to_file_iter(double* arr, int n, char* name){
-    FILE* f = fopen(name, "a");
+    FILE* f = fopen(name, "w");
     for(int i = 0; i < n; i++){
         fprintf(f, "%lf\n", arr[i]);
     }

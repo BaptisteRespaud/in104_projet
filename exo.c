@@ -9,7 +9,7 @@ int main(){
 
     srand(time(NULL));
 
-    int N = 100000;
+    int N = 1000;
     int in_the_circle = 0;
     double* pi_arr = malloc(N*sizeof(double));
 
@@ -19,12 +19,14 @@ int main(){
         if (x * x + y * y <= 1){
             in_the_circle += 1;
         }
-        pi_arr[i] = 4 * ((double) in_the_circle / (double) N);
+        pi_arr[i] = 4.0 * in_the_circle / (i + 1);
     }
 
     printf("pi = %f\n", pi_arr[N-1]);
     write_to_file_iter(pi_arr, N, "pi_iterations");
     
+    free(pi_arr);
+
     // estimation of the Gaussian integral
 
     N = 10000;
