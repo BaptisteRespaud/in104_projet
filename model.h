@@ -15,7 +15,7 @@ typedef struct{
     double B;
     double T;
 
-    SquareLattice *lat;
+    SquareLattice* lat;
 
 }ising;
 

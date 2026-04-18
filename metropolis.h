@@ -15,7 +15,7 @@
 
 double boltzman_probability(double energy, double T);
 
-int move(ising *model, int *state);   // return if accepted or not
+int move(ising* model, int* state);   // return if accepted or not
 
 
 
