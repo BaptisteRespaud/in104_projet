@@ -31,6 +31,11 @@ double calc_variance(double arr[], int n){
     return sum/n;
 }
 
+double calc_std(double arr[], int n){
+    double res = calc_variance(arr, n);
+    return sqrt(res);
+}
+
 void write_to_file_iter(double* arr, int n, char* name){
     FILE* f = fopen(name, "w");
     for(int i = 0; i < n; i++){
