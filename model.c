@@ -75,9 +75,5 @@ double local_energy(ising *model, int *state, int site){
 }
 
 double total_energy(ising *model, int *state){
-    double res = 0;
-    for(int i = 0; i < model->lat->L; i++){
-        res += local_energy(model, state, i);
-    }
-    return res;
+    return;   
 }
