@@ -20,3 +20,11 @@ command to run :
 - tests/test_utils.c
 command to run in the tests directory : 
 	gcc test_utils.c ../utils.c -Wall -Wextra -lm
+
+Edited .c files are (where we wrote code) : 
+- exo.c
+- model.c
+- utils.c 
+- test_utils.c
+- plot.py
+
