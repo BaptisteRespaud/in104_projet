@@ -83,3 +83,36 @@ double local_energy(ising *model, int *state, int site){
     return pairs_energy + ext_field_contribution;
 }
 
+// compute the total energy of the model in a certain state
+double total_energy(ising* model, int* state){
+    int Lx = model->lat->Lx;
+    int Ly = model->lat->Ly;
+    int L = model->lat->L;
+    bool pbc = model->lat->pbc;
+
+    double energy = 0.0;
+
+    // for each site we compute is right and down neighbour except if we reach the right column or bottom line
+    for(int site = 0; site < L; site++){
+        energy += ext_field_energy(model, state, site);
+    
+        int row = site / Lx;
+        int col = site % Lx;
+
+        if (col < Lx - 1){
+            energy += pair_energy(model, state, site, site + 1);
+        // if there are periodic boundary conditions 
+        } else if (pbc){
+            energy += pair_energy(model, state, site, site - (Lx - 1));
+        } 
+
+        if (row < Ly - 1){
+            energy += pair_energy(model, state, site, site + Lx);
+        // if there are periodic boundary conditions 
+        } else if (pbc){
+            energy += pair_energy(model, state, site, site - (Ly - 1)*Lx);
+        }
+    }
+
+    return energy;
+}
