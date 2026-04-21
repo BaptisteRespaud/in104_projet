@@ -70,3 +70,20 @@ double* read_from_file(char* name, int n){
     fclose(f);
     return res;
 }
+
+double *calc_autocorr(double arr[], int n,int n_autoc){
+    double* autocorr_arr = malloc(n_autoc * sizeof(double));
+    double mean = calc_mean(arr, n);
+    double variance = calc_variance(arr, n);
+    for (int j = 0; j < n_autoc; j++){
+        double* prod = malloc((n-j) * sizeof(double));
+        double retard = malloc((n-j) * sizeof(double));
+        for (int i = 0; i <n-n_autoc; i++){
+            prod[i] = arr[i]*arr[i+j];
+            retard[i]= arr[i+j];
+        }
+        autocorr_arr[j] = (calc_mean(prod,n-j) - calc_mean(retard,n-j)*mean/variance);
+        free(prod);
+        free(retard);
+    }
+    return autocorr_arr;
