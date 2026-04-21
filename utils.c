@@ -26,18 +26,46 @@ double calc_mean_int(int arr[], int n){
 // compute the variance of the double array arr
 double calc_variance(double arr[], int n){
     double mean = calc_mean(arr, n);
-    int sum = 0;
+    double sum = 0.0;
     for (int i = 0; i < n; i++){
-        sum += (arr[i] - mean) * (arr[i] - mean);
+        double diff = arr[i] - mean;
+        sum += diff * diff;
     }
-    return sum/n;
+    return sum / n;
 }
+
 
 // compute the standard deviation of the double array arr
 double calc_std(double arr[], int n){
     double res = calc_variance(arr, n);
     return sqrt(res);
 }
+
+// compute the autocorrelation array of size n_autoc of a double array arr of size n
+double* calc_autocorr(double arr[], int n, int n_autoc) {
+    double* autocorr = malloc(n_autoc * sizeof(double));
+
+    double mean = calc_mean(arr, n);
+    double variance = calc_variance(arr, n);  
+
+    if (variance == 0) {
+        // specific case autocorr[0] = 1 and forall other index i autocorr[i] = 0
+        for (int j = 0; j < n_autoc; j++)
+            autocorr[j] = (j == 0) ? 1.0 : 0.0;
+        return autocorr;
+    }
+
+    for (int j = 0; j < n_autoc; j++) {
+        double sum = 0.0;
+        for (int i = 0; i < n - j; i++) {
+            sum += (arr[i] - mean) * (arr[i + j] - mean);
+        }
+        autocorr[j] = (double) sum / ((n - j) * variance);
+    }
+
+    return autocorr;
+}
+
 
 /* write down in file named name the array arr following this syntaxe 
 arr[0]
@@ -69,22 +97,4 @@ double* read_from_file(char* name, int n){
     }
     fclose(f);
     return res;
-}
-
-double *calc_autocorr(double arr[], int n,int n_autoc){
-    double* autocorr_arr = malloc(n_autoc * sizeof(double));
-    double mean = calc_mean(arr, n);
-    double variance = calc_variance(arr, n);
-    for (int j = 0; j < n_autoc; j++){
-        double* prod = malloc((n-j) * sizeof(double));
-        double* retard = malloc((n-j) * sizeof(double));
-        for (int i = 0; i <n-n_autoc; i++){
-            prod[i] = arr[i]*arr[i+j];
-            retard[i]= arr[i+j];
-        }
-        autocorr_arr[j] = (calc_mean(prod, n - j) - calc_mean(retard, n - j) * mean) / variance;
-        free(prod);
-        free(retard);
-    }
-    return autocorr_arr;
 }

@@ -83,6 +83,3 @@ double local_energy(ising *model, int *state, int site){
     return pairs_energy + ext_field_contribution;
 }
 
-double total_energy(ising *model, int *state){
-    return;   
-}
