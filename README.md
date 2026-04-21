@@ -23,7 +23,7 @@ command to run in the tests directory :
 
 Edited .c files are (where we wrote code) : 
 - exo.c
-- model.c
+- model.c (not tested yet)
 - utils.c 
 - test_utils.c
 - plot.py
