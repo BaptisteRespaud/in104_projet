@@ -9,15 +9,17 @@
 #include "metropolis.h"
 
 int main() {
+    srand(time(NULL));
 
     // read params from file "config.txt"
 
     double T, B;
     int Lx, Ly, N_tot, N_eq;
+    double DeltaT, dT;
 
     FILE *fp = fopen("config.txt", "r");
     fscanf(fp, "T %lf \n", &T);
-    printf("Temperature T = %lf \n", T);
+    printf("Initial Temperature T = %lf \n", T);
     
     fscanf(fp, "B %lf \n", &B);
     printf("External field B = %lf \n", B);
@@ -31,7 +33,13 @@ int main() {
     printf("Metropolis N_tot = %d \n", N_tot);
     printf("Metropolis N_eq = %d \n", N_eq);
 
+    fscanf(fp, "DeltaT %lf \n", &DeltaT);
+    fscanf(fp, "dT %lf \n", &dT);
+    printf("Range of temperatures DeltaT = %lf\n", DeltaT);
+    printf("Integration step dT = %lf\n", dT);
     fclose(fp);
+
+    // initialization 
 
     SquareLattice* lat = malloc(sizeof(SquareLattice));
     lat->L = Lx*Ly; lat->Lx = Lx; lat->Ly = Ly; lat->pbc = true;
@@ -40,30 +48,50 @@ int main() {
     int* state = malloc(lat->L * sizeof(int));
     for(int i = 0; i < lat->L; i++){
         double r = (double) rand() / (double) RAND_MAX;
-        if (r < 1/2){
+        if (r < 0.5){
             state[i] = -1;
         } else {
             state[i] = 1; 
         }
     }
 
-    int N_iterations = 10000;
+    // metropolis algorithm 
 
-    double* avg_magnetization_array = malloc(N_iterations * sizeof(double));
-    double* energy_array = malloc(N_iterations * sizeof(double)); 
+    int T_iter = DeltaT/dT;
 
-    for (int i = 0 ; i < N_iterations; i++){
-        // compute the energy of the state and the squared magnetization 
-        double m = avg_magnetization(model, state);
-        avg_magnetization_array[i] = m * m;
-        double e = total_energy(model, state);
-        energy_array[i] = e;
-        int res = move(model, state);
+    double* sqr_avg_mag_vsT = malloc(T_iter * sizeof(double));
+    double* sqr_avg_mag_arr = malloc(N_tot * sizeof(double));
+
+
+    for (int j = 0 ; j < T_iter; j ++){
+        // equilibration steps
+        for (int k = 0; k < N_eq; k++){
+            move(model, state);    
+        } 
+
+        // computing of the observable
+        model->T = T + j * dT;
+        for (int i = 0 ; i < N_tot; i++){
+
+            // compute the average squared magnetization 
+            double m = avg_magnetization(model, state);
+            sqr_avg_mag_arr[i] = m * m;
+            move(model, state);
+        }
+
+        sqr_avg_mag_vsT[j] = calc_mean(sqr_avg_mag_arr, N_tot);
+        // printf("average squared magnetization after %d iterations and with T = %f: %lf\n", N_tot, T + j*dT, sqr_avg_mag_vsT[j]);
     }
 
-    printf("average squared magnetization after %d iterations and with T = %f: %lf\n", N_iterations, T, calc_mean(avg_magnetization_array, N_iterations));
-    printf("average energy after %d iterations and with T = %f: %lf\n", N_iterations, T, calc_mean(energy_array, N_iterations));
+    char filename[64];
+    sprintf(filename, "iterations/sqr_avg_mag_vsT_L%d.txt", Lx);
+    write_to_file_iter(sqr_avg_mag_vsT, T_iter, filename);
 
+    free(model->lat);
+    free(model);
+    free(state);
+    free(sqr_avg_mag_arr);
+    free(sqr_avg_mag_vsT);
     return 0;
 }
 

@@ -1,6 +1,8 @@
-T	1.8
+T	1.5
 B	0
-Lx	6
-Ly	6
+Lx	12
+Ly	12
 N_tot	200000
 N_eq	50000
+DeltaT  2.5
+dT      0.1
