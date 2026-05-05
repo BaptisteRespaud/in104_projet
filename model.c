@@ -119,7 +119,7 @@ double total_energy(ising* model, int* state){
 
 
 /* compute the average magnetization of the system following this formula : 
-m = 1 / L * sum(state[i]) 
+m = (1 / L) * sum(state[i]) 
 */
 double avg_magnetization(ising *model,int *state){
     return calc_mean_int(state, model->lat->L);

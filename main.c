@@ -33,8 +33,38 @@ int main() {
 
     fclose(fp);
 
+    SquareLattice* lat = malloc(sizeof(SquareLattice));
+    lat->L = Lx*Ly; lat->Lx = Lx; lat->Ly = Ly; lat->pbc = true;
+    ising* model = define_model(1, B, T, lat);
 
+    int* state = malloc(lat->L * sizeof(int));
+    for(int i = 0; i < lat->L; i++){
+        double r = (double) rand() / (double) RAND_MAX;
+        if (r < 1/2){
+            state[i] = -1;
+        } else {
+            state[i] = 1; 
+        }
+    }
 
+    int N_iterations = 10000;
+
+    double* avg_magnetization_array = malloc(N_iterations * sizeof(double));
+    double* energy_array = malloc(N_iterations * sizeof(double)); 
+
+    for (int i = 0 ; i < N_iterations; i++){
+        // compute the energy of the state and the squared magnetization 
+        double m = avg_magnetization(model, state);
+        avg_magnetization_array[i] = m * m;
+        double e = total_energy(model, state);
+        energy_array[i] = e;
+        int res = move(model, state);
+    }
+
+    printf("average squared magnetization after %d iterations and with T = %f: %lf\n", N_iterations, T, calc_mean(avg_magnetization_array, N_iterations));
+    printf("average energy after %d iterations and with T = %f: %lf\n", N_iterations, T, calc_mean(energy_array, N_iterations));
+
+    return 0;
 }
 
 
