@@ -11,7 +11,7 @@ double calc_mean(double arr[], int n){
     for (int i = 0; i < n; i++){
         sum += arr[i];
     }
-    return sum/n;
+    return (double) sum / (double) n;
 }
 
 // compute the mean of the int array arr
@@ -20,7 +20,7 @@ double calc_mean_int(int arr[], int n){
     for (int i = 0; i < n; i++){
         sum += arr[i];
     }
-    return sum / n;
+    return (double) sum / (double) n;
 }
 
 // compute the variance of the double array arr

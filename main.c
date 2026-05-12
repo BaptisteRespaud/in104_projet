@@ -58,40 +58,58 @@ int main() {
     // metropolis algorithm 
 
     int T_iter = DeltaT/dT;
+    int *count = malloc(sizeof(int));
+    *count = 0;
 
     double* sqr_avg_mag_vsT = malloc(T_iter * sizeof(double));
     double* sqr_avg_mag_arr = malloc(N_tot * sizeof(double));
+    double* avg_E_arr = malloc(N_tot * sizeof(double));
+    double* avg_E_vsT = malloc(T_iter * sizeof(double));
+
 
 
     for (int j = 0 ; j < T_iter; j ++){
+        model->T = T + j * dT;
+
         // equilibration steps
         for (int k = 0; k < N_eq; k++){
-            move(model, state);    
+            move(model, state, count);    
         } 
 
         // computing of the observable
-        model->T = T + j * dT;
         for (int i = 0 ; i < N_tot; i++){
 
             // compute the average squared magnetization 
             double m = avg_magnetization(model, state);
+            double E = total_energy(model, state);
             sqr_avg_mag_arr[i] = m * m;
-            move(model, state);
+            avg_E_arr[i] = E;
+            move(model, state, count);
         }
-
+        write_to_file_iter(sqr_avg_mag_arr, N_tot, "test");
         sqr_avg_mag_vsT[j] = calc_mean(sqr_avg_mag_arr, N_tot);
+        avg_E_vsT[j] = calc_mean(avg_E_arr, N_tot);
         // printf("average squared magnetization after %d iterations and with T = %f: %lf\n", N_tot, T + j*dT, sqr_avg_mag_vsT[j]);
     }
+    
+    printf("rate of acceptation : %lf\n", (double) *count / (double) (T_iter*(N_eq + N_tot)));
 
-    char filename[64];
-    sprintf(filename, "iterations/sqr_avg_mag_vsT_L%d.txt", Lx);
-    write_to_file_iter(sqr_avg_mag_vsT, T_iter, filename);
+    char filename1[64];
+    sprintf(filename1, "iterations/sqr_avg_mag_vsT_L%d.txt", Lx);
+    write_to_file_iter(sqr_avg_mag_vsT, T_iter, filename1);
+
+    char filename2[64];
+    sprintf(filename2, "iterations/avg_E_vsT_L%d.txt", Lx);
+    write_to_file_iter(avg_E_vsT, T_iter, filename2);
+
 
     free(model->lat);
     free(model);
     free(state);
     free(sqr_avg_mag_arr);
     free(sqr_avg_mag_vsT);
+    free(avg_E_arr);
+    free(avg_E_vsT);
     return 0;
 }
 
