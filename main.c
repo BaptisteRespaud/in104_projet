@@ -58,8 +58,7 @@ int main() {
     // metropolis algorithm 
 
     int T_iter = DeltaT/dT;
-    int *count = malloc(sizeof(int));
-    *count = 0;
+
 
     double* sqr_avg_mag_vsT = malloc(T_iter * sizeof(double));
     double* sqr_avg_mag_arr = malloc(N_tot * sizeof(double));
@@ -67,13 +66,12 @@ int main() {
     double* avg_E_vsT = malloc(T_iter * sizeof(double));
 
 
-
     for (int j = 0 ; j < T_iter; j ++){
         model->T = T + j * dT;
 
         // equilibration steps
         for (int k = 0; k < N_eq; k++){
-            move(model, state, count);    
+            move(model, state);    
         } 
 
         // computing of the observable
@@ -84,15 +82,13 @@ int main() {
             double E = total_energy(model, state);
             sqr_avg_mag_arr[i] = m * m;
             avg_E_arr[i] = E;
-            move(model, state, count);
+            move(model, state);
         }
-        write_to_file_iter(sqr_avg_mag_arr, N_tot, "test");
         sqr_avg_mag_vsT[j] = calc_mean(sqr_avg_mag_arr, N_tot);
         avg_E_vsT[j] = calc_mean(avg_E_arr, N_tot);
         // printf("average squared magnetization after %d iterations and with T = %f: %lf\n", N_tot, T + j*dT, sqr_avg_mag_vsT[j]);
     }
     
-    printf("rate of acceptation : %lf\n", (double) *count / (double) (T_iter*(N_eq + N_tot)));
 
     char filename1[64];
     sprintf(filename1, "iterations/sqr_avg_mag_vsT_L%d.txt", Lx);
@@ -102,6 +98,28 @@ int main() {
     sprintf(filename2, "iterations/avg_E_vsT_L%d.txt", Lx);
     write_to_file_iter(avg_E_vsT, T_iter, filename2);
 
+    // compute the autocorrelation function for a given temperature T = 2.3J
+    model->T = 2.3;
+
+    // equilibration steps
+    for (int k = 0; k < N_eq; k++){
+        move(model, state);    
+    } 
+
+    // computing of the observable
+    for (int i = 0 ; i < N_tot; i++){
+        // compute the average squared magnetization 
+        double m = avg_magnetization(model, state);
+        sqr_avg_mag_arr[i] = m * m;
+
+        move(model, state);
+    }
+
+    double* autocorr_23_mag = calc_autocorr(sqr_avg_mag_arr, N_tot, 1000);
+    char filename3[64];
+    sprintf(filename3, "iterations/autocorr_mag_L%d.txt", Lx);
+    write_to_file_iter(autocorr_23_mag, 1000, filename3);
+
 
     free(model->lat);
     free(model);
@@ -110,6 +128,7 @@ int main() {
     free(sqr_avg_mag_vsT);
     free(avg_E_arr);
     free(avg_E_vsT);
+    free(autocorr_23_mag);
     return 0;
 }
 
