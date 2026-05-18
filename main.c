@@ -48,23 +48,23 @@ int main() {
     int* state = malloc(lat->L * sizeof(int));
     for(int i = 0; i < lat->L; i++){
         double r = (double) rand() / (double) RAND_MAX;
-        if (r < 0.5){
-            state[i] = -1;
-        } else {
-            state[i] = 1; 
-        }
+        state[i] = (r < 0.5 ? -1 : 1);
     }
 
     // metropolis algorithm 
 
     int T_iter = DeltaT/dT;
-
+    int N = Lx * Ly;   // number of spins
 
     double* sqr_avg_mag_vsT = malloc(T_iter * sizeof(double));
     double* sqr_avg_mag_arr = malloc(N_tot * sizeof(double));
-    double* avg_E_arr = malloc(N_tot * sizeof(double));
-    double* avg_E_vsT = malloc(T_iter * sizeof(double));
+    double* m4_arr = malloc(N_tot * sizeof(double));
 
+    double* E_arr = malloc(N_tot * sizeof(double));
+    double* E_sqr_arr = malloc(N_tot * sizeof(double));
+    double* avg_E_vsT = malloc(T_iter * sizeof(double));
+    double* cv_vsT = malloc(T_iter* sizeof(double));
+    double* binder_vsT = malloc(T_iter * sizeof(double));
 
     for (int j = 0 ; j < T_iter; j ++){
         model->T = T + j * dT;
@@ -74,22 +74,40 @@ int main() {
             move(model, state);    
         } 
 
-        // computing of the observable
+        // computing of the observables
         for (int i = 0 ; i < N_tot; i++){
-
-            // compute the average squared magnetization 
             double m = avg_magnetization(model, state);
+            double m2 = m * m;
+            double m4 = m2 * m2;
+
             double E = total_energy(model, state);
-            sqr_avg_mag_arr[i] = m * m;
-            avg_E_arr[i] = E;
+
+            sqr_avg_mag_arr[i] = m2;
+            m4_arr[i] = m4;
+
+            E_arr[i] = E;
+            E_sqr_arr[i] = E * E;
+
             move(model, state);
         }
-        sqr_avg_mag_vsT[j] = calc_mean(sqr_avg_mag_arr, N_tot);
-        avg_E_vsT[j] = calc_mean(avg_E_arr, N_tot);
-        // printf("average squared magnetization after %d iterations and with T = %f: %lf\n", N_tot, T + j*dT, sqr_avg_mag_vsT[j]);
+
+        double avg_m2 = calc_mean(sqr_avg_mag_arr, N_tot);
+        double avg_m4 = calc_mean(m4_arr, N_tot);
+
+        sqr_avg_mag_vsT[j] = avg_m2;
+
+        double avg_E = calc_mean(E_arr, N_tot);
+        double avg_E_sqr = calc_mean(E_sqr_arr, N_tot);
+
+        avg_E_vsT[j] = avg_E;
+
+        // Correct heat capacity per spin
+        cv_vsT[j] = (avg_E_sqr - avg_E * avg_E) / (N * model->T * model->T);
+
+        // Correct Binder cumulant of magnetization
+        binder_vsT[j] = 1 - avg_m4 / (3 * avg_m2 * avg_m2);
     }
     
-
     char filename1[64];
     sprintf(filename1, "iterations/sqr_avg_mag_vsT_L%d.txt", Lx);
     write_to_file_iter(sqr_avg_mag_vsT, T_iter, filename1);
@@ -98,38 +116,44 @@ int main() {
     sprintf(filename2, "iterations/avg_E_vsT_L%d.txt", Lx);
     write_to_file_iter(avg_E_vsT, T_iter, filename2);
 
-    // compute the autocorrelation function for a given temperature T = 2.3J
+    char filename3[64];
+    sprintf(filename3, "iterations/Cv_vsT_L%d.txt", Lx);
+    write_to_file_iter(cv_vsT, T_iter, filename3);
+
+    char filename4[64];
+    sprintf(filename4, "iterations/binder_vsT_L%d.txt", Lx);
+    write_to_file_iter(binder_vsT, T_iter, filename4);
+
+    // compute the autocorrelation function for T = 2.3J
     model->T = 2.3;
 
-    // equilibration steps
     for (int k = 0; k < N_eq; k++){
         move(model, state);    
     } 
 
-    // computing of the observable
     for (int i = 0 ; i < N_tot; i++){
-        // compute the average squared magnetization 
         double m = avg_magnetization(model, state);
         sqr_avg_mag_arr[i] = m * m;
-
         move(model, state);
     }
 
     double* autocorr_23_mag = calc_autocorr(sqr_avg_mag_arr, N_tot, 1000);
-    char filename3[64];
-    sprintf(filename3, "iterations/autocorr_mag_L%d.txt", Lx);
-    write_to_file_iter(autocorr_23_mag, 1000, filename3);
-
+    char filename5[64];
+    sprintf(filename5, "iterations/autocorr_mag_L%d.txt", Lx);
+    write_to_file_iter(autocorr_23_mag, 1000, filename5);
 
     free(model->lat);
     free(model);
     free(state);
     free(sqr_avg_mag_arr);
     free(sqr_avg_mag_vsT);
-    free(avg_E_arr);
+    free(m4_arr);
+    free(E_arr);
+    free(E_sqr_arr);
+    free(cv_vsT);
     free(avg_E_vsT);
     free(autocorr_23_mag);
+    free(binder_vsT);
+
     return 0;
 }
-
-
