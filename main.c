@@ -7,6 +7,7 @@
 #include "lattice.h"
 #include "model.h"
 #include "metropolis.h"
+#include "swendsen_wang.h"
 
 int main() {
     srand(time(NULL));
@@ -70,9 +71,11 @@ int main() {
         model->T = T + j * dT;
 
         // equilibration steps
-        for (int k = 0; k < N_eq; k++){
+        /*for (int k = 0; k < N_eq; k++){
+            //---metropolis---
             move(model, state);    
         } 
+        */
 
         // computing of the observables
         for (int i = 0 ; i < N_tot; i++){
@@ -88,7 +91,11 @@ int main() {
             E_arr[i] = E;
             E_sqr_arr[i] = E * E;
 
-            move(model, state);
+            //---metropolis---
+            //move(model, state);
+
+            //---swendsen_wang---
+            swendsen_wang(model, state);
         }
 
         double avg_m2 = calc_mean(sqr_avg_mag_arr, N_tot);
