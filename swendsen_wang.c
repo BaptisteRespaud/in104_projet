@@ -33,6 +33,7 @@ uf_elem_t uf_find(uf_elem_t x){
         return x;
     } else {
         uf_elem_t representant = uf_find(x->parent);
+        // path compression optimization
         x->parent = representant;
         return representant;
     }
@@ -41,6 +42,7 @@ uf_elem_t uf_find(uf_elem_t x){
 void uf_union(uf_elem_t a, uf_elem_t b){
     uf_elem_t r_a = uf_find(a);
     uf_elem_t r_b = uf_find(b);
+    // rank union optimization
     if (r_a == r_b){
         return;
     } 
@@ -70,12 +72,18 @@ bool connect(uf_partition_t p, ising* model, int* state, int site1, int site2){
 void flip_clusters(uf_partition_t p, ising* model, int* state){
     int L = model->lat->L;
 
+    // 1. gather all roots indexes
     int* root_index = malloc(L * sizeof(int));
     for (int i = 0; i < L; i++){
         uf_elem_t root = uf_find(p[i]);
         root_index[i] = root->elem;
     }
 
+    /* cluster_flip : 
+        -1 undecided
+        1 flip spins of the cluster
+        0 don't flip 
+    */
     int* cluster_flip = malloc(L * sizeof(int));
     for (int i = 0; i < L; i++){
         cluster_flip[i] = -1;  
@@ -93,6 +101,7 @@ void flip_clusters(uf_partition_t p, ising* model, int* state){
         }
     }
 
+    // 3. for each state we flip or not its spin following its reprentant
     for (int i = 0 ; i < L; i++){
         int r = root_index[i];
         if (cluster_flip[r]){
@@ -117,6 +126,7 @@ void swendsen_wang(ising* model, int* state){
 
     uf_partition_t p = uf_initialize(L);
 
+    // for each site we connect him to its right and down neighbour
     for (int y = 0; y < Ly; y++){
         for (int x = 0; x < Lx; x++){
 

@@ -12,11 +12,10 @@
 #include "utils.h"
 #include "model.h"
 
-
+/* computes the boltzman probabily */
 double boltzman_probability(double energy, double T);
 
-int move(ising* model, int* state);   // return if accepted or not
-
-
+/* metropolis algorithm */
+int move(ising* model, int* state);  
 
 #endif

@@ -22,23 +22,14 @@ ising* define_model(double J, double B, double T, SquareLattice* lat){
     return model;
 }
 
-/* compute the energy from the external magnetic field B according to this formula :
-E = - B * spin of the site 
-*/
 double ext_field_energy(ising *model, int *state, int site){
     return -model->B * state[site];
 }
 
-/* compute the energy from a pair of neighbors according to this formula :
-E = - J * S_1 * S_2
-*/
 double pair_energy(ising *model, int *state, int site1, int site2){
     return -model->J * state[site1] * state[site2];
 }
 
-/* compute the local energy of a given site for a state of the system according to this formula :
-E = External Field Energy + Each pair energy with the neighbors of the site.
-*/
 double local_energy(ising *model, int *state, int site){
     double ext_field_contribution = ext_field_energy(model, state, site);
     int Lx = model->lat->Lx;
@@ -83,7 +74,6 @@ double local_energy(ising *model, int *state, int site){
     return pairs_energy + ext_field_contribution;
 }
 
-// compute the total energy of the model in a certain state
 double total_energy(ising* model, int* state){
     int Lx = model->lat->Lx;
     int Ly = model->lat->Ly;
@@ -117,10 +107,6 @@ double total_energy(ising* model, int* state){
     return energy;
 }
 
-
-/* compute the average magnetization of the system following this formula : 
-m = (1 / L) * sum(state[i]) 
-*/
 double avg_magnetization(ising *model,int *state){
     return calc_mean_int(state, model->lat->L);
 }

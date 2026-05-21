@@ -1,30 +1,73 @@
 # IN104: Monte Carlo Simulation of the Ising Model
 
-Welcome to the project "Monte Carlo Simulation of the Ising Model". See the intro.pdf for more information.
+## How to Use This Project
 
-Baptiste RESPAUD, Maximilien SCHIRM
+This project simulates the 2D Ising model using two Monte Carlo algorithms:
 
-----MID-TERM EXAM---- 
+- **Metropolis** (local updates)
+- **Swendsen–Wang** (cluster updates)
 
-The goal of this project is to use Monte Carlo methods to sample configurations of the Ising model according to
-the Boltzmann distribution.
+The user can switch between algorithms, configure physical parameters, run the simulation, and generate plots of the main observables.
 
-To achieve this we will rely on several algorithms such as the Metropolis algorithm.
+---
 
+### 1. Compile the Project
 
-As our project isn't finished, executables files are, up to now : 
-- exo.c 
-command to run : 
-	gcc exo.c utils.c -Wall -Wextra -lm
+From the root directory, run:
 
-- tests/test_utils.c
-command to run in the tests directory : 
-	gcc test_utils.c ../utils.c -Wall -Wextra -lm
+	make all
 
-Edited .c files are (where we wrote code) : 
-- exo.c
-- model.c (not tested yet)
-- utils.c 
-- test_utils.c
-- plot.py
+### 2. Configure the simulation
 
+All parameters are defined in: 
+
+	config.txt
+
+- T — initial temperature
+- B — external magnetic field
+- Lx, Ly — lattice dimensions
+- N_tot — number of Monte Carlo steps for measurements
+- DeltaT, dT — temperature sweep range and step
+- N_eq_metro — equilibration steps for Metropolis
+- N_eq_sw — equilibration steps for Swendsen–Wang
+- SwendsenWang — algorithm selector
+
+### 3. Run the Simulation
+
+Once the configuration file is set, run:
+
+	./main
+
+The program will:
+- read config.txt
+- run the simulation using the selected algorithm
+- compute *observables* such as:
+	- magnetization $M$
+	- energy $E$
+	- heat capacity $C_v$
+	- binder cumulant $b$
+	- autocorrelation function $C_{m^2}$
+
+save all results in the **values/** directory
+
+### 4. Generate Plots
+To visualize the results, run:
+
+```bash
+python3 plot.py
+```
+
+This script:
+1. loads the data from **values/**
+2. generates plots for each observable
+3. saves the figures in the **plots/** directory
+
+### 5. Summary
+
+1. make all
+2. Edit config.txt
+3. ./main
+4. python3 plot.py
+
+## Authors 
+Maximilien Schirm, Baptiste Respaud

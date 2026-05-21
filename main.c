@@ -12,35 +12,38 @@
 int main() {
     srand(time(NULL));
 
-    // read params from file "config.txt"
+    // 1. read params from file "config.txt"
 
     double T, B;
-    int Lx, Ly, N_tot, N_eq;
+    int Lx, Ly, N_tot, N_eq_metro, N_eq_sw;
     double DeltaT, dT;
+    int use_sw;
 
     FILE *fp = fopen("config.txt", "r");
-    fscanf(fp, "T %lf \n", &T);
-    printf("Initial Temperature T = %lf \n", T);
-    
-    fscanf(fp, "B %lf \n", &B);
-    printf("External field B = %lf \n", B);
-    
+    fscanf(fp, "T %lf \n", &T);   
+    fscanf(fp, "B %lf \n", &B);    
     fscanf(fp, "Lx %d \n", &Lx);
     fscanf(fp, "Ly %d \n", &Ly);
-    printf("Square lattice Lx = %d Ly = %d \n", Lx, Ly);
-    
     fscanf(fp, "N_tot %d \n", &N_tot);
-    fscanf(fp, "N_eq %d \n", &N_eq);
-    printf("Metropolis N_tot = %d \n", N_tot);
-    printf("Metropolis N_eq = %d \n", N_eq);
-
+    fscanf(fp, "N_eq_metro %d \n", &N_eq_metro);
+    fscanf(fp, "N_eq_sw %d \n", &N_eq_sw);
     fscanf(fp, "DeltaT %lf \n", &DeltaT);
     fscanf(fp, "dT %lf \n", &dT);
-    printf("Range of temperatures DeltaT = %lf\n", DeltaT);
-    printf("Integration step dT = %lf\n", dT);
+    fscanf(fp, "SwendsenWang %d\n", &use_sw);
+
     fclose(fp);
 
-    // initialization 
+    int N_eq = (use_sw ? N_eq_sw : N_eq_metro);
+    
+    printf("Initial Temperature T = %lf\n", T);
+    printf("External field B = %lf\n", B);
+    printf("Lattice: %dx%d\n", Lx, Ly);
+    printf("N_tot = %d\n", N_tot);
+    printf("Temperature range: ΔT = %lf, dT = %lf\n", DeltaT, dT);
+    printf("Using Swendsen–Wang? %d\n", use_sw);
+    printf("Equilibration steps = %d\n", N_eq);
+
+    // 2. Initialization 
 
     SquareLattice* lat = malloc(sizeof(SquareLattice));
     lat->L = Lx*Ly; lat->Lx = Lx; lat->Ly = Ly; lat->pbc = true;
@@ -52,7 +55,7 @@ int main() {
         state[i] = (r < 0.5 ? -1 : 1);
     }
 
-    // metropolis algorithm 
+    // 3. Metropolis or Swendsen Wang algorithm 
 
     int T_iter = DeltaT/dT;
     int N = Lx * Ly;   // number of spins
@@ -60,7 +63,6 @@ int main() {
     double* sqr_avg_mag_vsT = malloc(T_iter * sizeof(double));
     double* sqr_avg_mag_arr = malloc(N_tot * sizeof(double));
     double* m4_arr = malloc(N_tot * sizeof(double));
-
     double* E_arr = malloc(N_tot * sizeof(double));
     double* E_sqr_arr = malloc(N_tot * sizeof(double));
     double* avg_E_vsT = malloc(T_iter * sizeof(double));
@@ -71,11 +73,14 @@ int main() {
         model->T = T + j * dT;
 
         // equilibration steps
-        /*for (int k = 0; k < N_eq; k++){
-            //---metropolis---
-            move(model, state);    
+        for (int k = 0; k < N_eq; k++){
+            if (use_sw == 0) {
+                move(model, state);    
+            } else {
+                swendsen_wang(model, state);
+            }
         } 
-        */
+        
 
         // computing of the observables
         for (int i = 0 ; i < N_tot; i++){
@@ -91,62 +96,66 @@ int main() {
             E_arr[i] = E;
             E_sqr_arr[i] = E * E;
 
-            //---metropolis---
-            //move(model, state);
-
-            //---swendsen_wang---
-            swendsen_wang(model, state);
+            if (use_sw == 0){
+                move(model, state);
+            } else {
+                swendsen_wang(model, state);
+            }
         }
 
         double avg_m2 = calc_mean(sqr_avg_mag_arr, N_tot);
         double avg_m4 = calc_mean(m4_arr, N_tot);
-
-        sqr_avg_mag_vsT[j] = avg_m2;
-
         double avg_E = calc_mean(E_arr, N_tot);
         double avg_E_sqr = calc_mean(E_sqr_arr, N_tot);
 
+        sqr_avg_mag_vsT[j] = avg_m2;
         avg_E_vsT[j] = avg_E;
-
-        // Correct heat capacity per spin
         cv_vsT[j] = (avg_E_sqr - avg_E * avg_E) / (N * model->T * model->T);
-
-        // Correct Binder cumulant of magnetization
         binder_vsT[j] = 1 - avg_m4 / (3 * avg_m2 * avg_m2);
     }
     
-    char filename1[64];
-    sprintf(filename1, "iterations/sqr_avg_mag_vsT_L%d.txt", Lx);
-    write_to_file_iter(sqr_avg_mag_vsT, T_iter, filename1);
-
-    char filename2[64];
-    sprintf(filename2, "iterations/avg_E_vsT_L%d.txt", Lx);
-    write_to_file_iter(avg_E_vsT, T_iter, filename2);
-
-    char filename3[64];
-    sprintf(filename3, "iterations/Cv_vsT_L%d.txt", Lx);
-    write_to_file_iter(cv_vsT, T_iter, filename3);
-
-    char filename4[64];
-    sprintf(filename4, "iterations/binder_vsT_L%d.txt", Lx);
-    write_to_file_iter(binder_vsT, T_iter, filename4);
-
-    // compute the autocorrelation function for T = 2.3J
+    
+    // 4. Computation the autocorrelation function for T = 2.3J
     model->T = 2.3;
 
-    for (int k = 0; k < N_eq; k++){
-        move(model, state);    
-    } 
+    for (int k = 0; k < N_eq; k++) {
+        if (use_sw == 0)
+            move(model, state);
+        else
+            swendsen_wang(model, state);
+    }
 
-    for (int i = 0 ; i < N_tot; i++){
+    for (int i = 0; i < N_tot; i++) {
         double m = avg_magnetization(model, state);
         sqr_avg_mag_arr[i] = m * m;
-        move(model, state);
+
+        if (use_sw == 0)
+            move(model, state);
+        else
+            swendsen_wang(model, state);
     }
 
     double* autocorr_23_mag = calc_autocorr(sqr_avg_mag_arr, N_tot, 1000);
+
+    // 5. Exportations of all values 
+    char filename1[64];
+    sprintf(filename1, "values/sqr_avg_mag_vsT_L%d.txt", Lx);
+    write_to_file_iter(sqr_avg_mag_vsT, T_iter, filename1);
+
+    char filename2[64];
+    sprintf(filename2, "values/avg_E_vsT_L%d.txt", Lx);
+    write_to_file_iter(avg_E_vsT, T_iter, filename2);
+
+    char filename3[64];
+    sprintf(filename3, "values/Cv_vsT_L%d.txt", Lx);
+    write_to_file_iter(cv_vsT, T_iter, filename3);
+
+    char filename4[64];
+    sprintf(filename4, "values/binder_vsT_L%d.txt", Lx);
+    write_to_file_iter(binder_vsT, T_iter, filename4);
+
     char filename5[64];
-    sprintf(filename5, "iterations/autocorr_mag_L%d.txt", Lx);
+    sprintf(filename5, "values/autocorr_mag_L%d.txt", Lx);
     write_to_file_iter(autocorr_23_mag, 1000, filename5);
 
     free(model->lat);
